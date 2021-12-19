@@ -1,7 +1,7 @@
 class gameClass{
     constructor(gameDiv){
         this.main = gameDiv;
-        this.tileCountTotal = 10;
+        this.tileCountTotal = 5;
         this.game = [];
 
         for(var i = 0; i < this.tileCountTotal; i++){
