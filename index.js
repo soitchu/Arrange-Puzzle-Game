@@ -1,9 +1,11 @@
 class gameClass{
-    constructor(gameDiv){
+    constructor(gameDiv, config){
+        this.config = config;
         this.main = gameDiv;
-        this.tileCountTotal = 5;
+        this.tileCountTotal = 3;
         this.game = [];
-
+        
+        /// Setting up the initial game-array
         for(var i = 0; i < this.tileCountTotal; i++){
             this.game.push([]);
             for(var j = 0; j < this.tileCountTotal; j++){
@@ -11,33 +13,52 @@ class gameClass{
             }
         }
 
+        /// The hole's position is represented by a '0' and it's location is on the bottom-right
         this.game[this.tileCountTotal - 1][this.tileCountTotal - 1] = 0;
         this.currentHole = [this.tileCountTotal - 1, this.tileCountTotal - 1];
+
+        /// the object 'locations' remembers the location of each tile and transltes them
         this.locations = {};
         for(var i = 0; i < this.tileCountTotal*this.tileCountTotal; i++){
- 
             this.locations[i] = {
                 x : 0,
                 y : 0,
             };
-
         }
     }
 
+    /*
+        Creates the tiles and returns the DIV
+    */
     createTile(num){
+
+        
         let tempTile = document.createElement("div");
         if(num == 0){
             tempTile.style.opacity = 0;
         }
         tempTile.className = "tile";
+
+        /// Applying the style according to the config file provided
+
+        tempTile.style.margin = `${this.config.margin}px`;
+        tempTile.style.height = `${this.config.size}px`;
+        tempTile.style.width = `${this.config.size}px`;
+
         tempTile.id = "tile" + num;
         tempTile.innerText = num;
         return tempTile;
     } 
 
 
-    move(dir){
+    move(dir, wonAlert = true){
         let xOffset = 0, yOffset = 0;
+
+        /// dir 3 : top
+        /// dir 1 : bottom
+        /// dir 4 : left
+        /// dir 2 : right
+
         if(dir == 3){
             yOffset = -1;
         }else if(dir == 1){
@@ -48,48 +69,81 @@ class gameClass{
             xOffset = 1;
         }
         
+        /// We don't wanna move if the the hold is on the edge
         if((this.currentHole[0] + yOffset) >= (this.tileCountTotal) || (this.currentHole[1] + xOffset) >= (this.tileCountTotal) || (this.currentHole[1] + xOffset) < 0 || (this.currentHole[0] + yOffset) < 0){
-            return;
+            return -1;
         }
 
+        /// Getting the coordinates of the hole adjacent, which is determined by the variable 'dir'
         let holeAbove = [this.currentHole[0] + yOffset,this.currentHole[1] + xOffset];
 
         let holeAboveDOM = document.getElementById(`tile${this.game[holeAbove[0]][holeAbove[1]]}`);
         let holeDOM = document.getElementById(`tile0`);
 
+        /// Getting the location so we can translate it
         let thisLoc = this.locations[this.game[holeAbove[0]][holeAbove[1]]];
         let thisHoleLoc = this.locations[this.game[this.currentHole[0]][this.currentHole[1]]];
+        
 
         if(yOffset != 0){
-            thisHoleLoc.y += 70*yOffset;
-            thisLoc.y += -70*yOffset;
+            thisHoleLoc.y += (this.config.size + this.config.margin*2 + 10)*yOffset;
+            thisLoc.y += -(this.config.size + this.config.margin*2 + 10)*yOffset;
         }else if(xOffset != 0){
-            thisHoleLoc.x += 60*xOffset;
-            thisLoc.x += -60*xOffset;                
+            thisHoleLoc.x += (this.config.size + this.config.margin*2)*xOffset;
+            thisLoc.x += -(this.config.size + this.config.margin*2)*xOffset;                
         }
 
-
+        /// Applying the translated positions
         holeAboveDOM.style.transform = `translate(${thisLoc.x}px,${thisLoc.y}px)`;
         holeDOM.style.transform = `translate(${thisHoleLoc.x}px,${thisHoleLoc.y}px)`;
 
+        /// Swapping the numbers in the main game array
         let tempNum = this.game[holeAbove[0]][holeAbove[1]];
-
         this.game[holeAbove[0]][holeAbove[1]] = this.game[this.currentHole[0]][this.currentHole[1]];
-
         this.game[this.currentHole[0]][this.currentHole[1]] = tempNum;
 
+        /// Changing the hole's position to its current location
         if(yOffset != 0){
-
             this.currentHole[0] += yOffset;
         }else if(xOffset != 0){
             this.currentHole[1] += xOffset;
+        }
 
+        let lastNum = -1;
+        let won = -1;
+        for(var i = 0; i < this.tileCountTotal; i++){
+            for(var j = 0; j < this.tileCountTotal; j++){
+
+                if(lastNum == -1){
+                    lastNum = this.game[i][j];
+                    continue;
+                }   
+
+                if((this.game[i][j] - lastNum) != 1 && this.game[i][j] != 0){
+                    won = 0;
+                    break;
+                }else{
+                    lastNum = this.game[i][j];
+                }
+
+                
+            }
+
+            if(won == 0){
+                break;
+            }
+        }
+
+        if(won == -1 && wonAlert){
+            alert("You won!");
         }
         
     }
 
 
-    initialise(){
+    async initialise(){
+
+        /// Appending the tiles in the main div
         for(var i = 0; i < this.tileCountTotal; i++){
             let tempColumn = document.createElement("div");
             tempColumn.className = "game_column";
@@ -98,26 +152,59 @@ class gameClass{
             }
             this.main.append(tempColumn);
         }
-
-        var times = Math.floor(Math.random()*20) + 100;
+        
+        /// The initial state of the game is determined by moving the tiles from the 
+        /// original configuration; this will ensure that it is always possible for the user
+        /// to use legal moves to go back to the original configuration to win the game
+        var times = Math.floor(Math.random()*20) + 200;
         var last = 0;
+
+        /// As the hole is initially at the bottom left, the first moves should be top or left
         var random = [3,4];
         for(var i = 0; i < times; i++){
-            var last = (Math.floor(Math.random()*100))%2;
-            this.move(random[last]);
-            
-            if(random[last] == 3 || random[last] == 1){
-                random = [4,2];
-            }else if(random[last] == 2 || random[last] == 4){
-                random = [1,3];
+            /// Choosing a random move to make
+            var last = (Math.floor(Math.random()*100))%(random.length);
+            let moved = random[last];
+
+            /// If the move made does not affect the configration of the game, then try again 
+            /// so hopefully we don't get the same move again. 
+            if(this.move(moved, false) == -1){
+                i--;
+                continue;
             }
+            
+            /// The next random array should not undo what the last move did,
+            /// so eliminating that possibility
+            if(moved == 3 || moved == 1){
+                random = [4,2,moved];
+            }else if(moved == 2 || moved == 4){
+                random = [1,3,moved];
+            }
+
+            /// If the hole is on the corner, don't make moves that would not change the conifguration at all
+            if(this.currentHole[0] == 0 && this.currentHole[1] == 0){
+                random = [1,2];
+            }else if(this.currentHole[0] == 0 && this.currentHole[1] == (this.tileCountTotal - 1)){
+                random = [1,4];
+            }else if(this.currentHole[1] == 0 && this.currentHole[0] == (this.tileCountTotal - 1)){
+                random = [3,2];
+            }else if(this.currentHole[1] == (this.tileCountTotal - 1) && this.currentHole[0] == (this.tileCountTotal - 1)){
+                random = [3,4];
+            }
+
         }
     }
+
+
 }
 var game;
+var config = {
+    "margin" : 8,
+    "size" : 70,
+};
 window.onload = function(){
     var game_div = document.getElementById("game_main");
-    game = new gameClass(game_div);
+    game = new gameClass(game_div, config);
     game.initialise();
 };
 
@@ -137,6 +224,4 @@ window.onkeydown = function(event){
     if(event.keyCode == 40){
         game.move(3)
     }
-
-
 };
