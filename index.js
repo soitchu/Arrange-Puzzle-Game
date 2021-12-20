@@ -320,6 +320,10 @@ window.onload = function(){
         touchStatus.start.y = event.touches[0].screenY;
     });
 
+    window.addEventListener("touchmove",function(event){
+        event.preventDefault();
+    }, { passive: false });
+
 
     window.addEventListener("touchend",function(event){
         let xDiff = event.changedTouches[0].screenX - touchStatus.start.x;
