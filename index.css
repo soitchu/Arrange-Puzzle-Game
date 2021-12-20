@@ -50,7 +50,7 @@ body{
     display: flex;
     align-items: center;
     justify-content: center;
-    transition-duration: 0.3s;
+    transition-duration: 0.14s;
     font-size: 20px;
     user-select: none;
 }
@@ -64,7 +64,6 @@ body{
     display: inline-block;
     margin:5px;
     font-family: 'Montserrat', sans-serif;
-    transition-duration: 0.3s;
     font-size: 20px;
 }
 
