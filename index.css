@@ -1,3 +1,6 @@
+body{
+    background-color: #002a47;
+}
 #container{
     height: 100%;
     width: 100%;
@@ -20,17 +23,21 @@
 #game_main{
     background-color: rgb(79, 111, 198);
     border-radius: 10px;
+    padding: 10px;
+
+    position: relative;
 
 }
 .game_column{
-    background-color: rgb(79, 111, 198);
     border-radius: 10px;
     display: flex;
     flex-direction: row;
     padding: 5px 10px 5px 10px;
 
 }
-
+.tileShadow{
+    background-color: #5ae1ff;
+}
 .tile{
     height: 50px;
     width:50px;
@@ -44,4 +51,34 @@
     align-items: center;
     justify-content: center;
     transition-duration: 0.3s;
+    font-size: 20px;
+    user-select: none;
+}
+
+.tileShadow{
+    height: 50px;
+    width:50px;
+    background-color: rgb(151, 153, 245);
+    border-radius: 10px;
+    color: white;
+    display: inline-block;
+    margin:5px;
+    font-family: 'Montserrat', sans-serif;
+    transition-duration: 0.3s;
+    font-size: 20px;
+}
+
+#shadowCon{
+    position: absolute;
+    top:0;
+    left: 0;
+    padding: 10px;
+    z-index: 1;
+}  
+
+#tilesCon{
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 2;
 }

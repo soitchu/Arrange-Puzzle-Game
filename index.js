@@ -2,9 +2,9 @@ class gameClass{
     constructor(gameDiv, config){
         this.config = config;
         this.main = gameDiv;
-        this.tileCountTotal = 3;
+        this.tileCountTotal = this.config.n;
         this.game = [];
-        
+        this.canMove = false;
         /// Setting up the initial game-array
         for(var i = 0; i < this.tileCountTotal; i++){
             this.game.push([]);
@@ -25,6 +25,16 @@ class gameClass{
                 y : 0,
             };
         }
+        var self = this;
+        window.onresize = function(){
+            if((window.innerWidth < ((this.config.size + 2*this.config.margin)*(this.config.n) + 20)) || window.innerWidth < 400 ){
+                this.config.margin = 5;
+                this.config.size = Math.floor(((window.innerWidth - 70)/this.config.n) - 2*this.config.margin );
+            }
+            console.log(this.config);
+
+            self.reinitialise();
+        };
     }
 
     /*
@@ -50,6 +60,18 @@ class gameClass{
         return tempTile;
     } 
 
+    createTileShadow(){
+        let tempTile = document.createElement("div");
+        tempTile.className = "tileShadow";
+
+        /// Applying the style according to the config file provided
+
+        tempTile.style.margin = `${this.config.margin}px`;
+        tempTile.style.height = `${this.config.size}px`;
+        tempTile.style.width = `${this.config.size}px`;
+
+        return tempTile;
+    }
 
     move(dir, wonAlert = true){
         let xOffset = 0, yOffset = 0;
@@ -70,7 +92,10 @@ class gameClass{
         }
         
         /// We don't wanna move if the the hold is on the edge
-        if((this.currentHole[0] + yOffset) >= (this.tileCountTotal) || (this.currentHole[1] + xOffset) >= (this.tileCountTotal) || (this.currentHole[1] + xOffset) < 0 || (this.currentHole[0] + yOffset) < 0){
+        if(!this.canMove && wonAlert){
+            return -2;
+        }
+        else if((this.currentHole[0] + yOffset) >= (this.tileCountTotal) || (this.currentHole[1] + xOffset) >= (this.tileCountTotal) || (this.currentHole[1] + xOffset) < 0 || (this.currentHole[0] + yOffset) < 0){
             return -1;
         }
 
@@ -140,17 +165,73 @@ class gameClass{
         
     }
 
+    reinitialise(){
+        this.canMove = false;
+        this.main.innerHTML = "";
+        
 
-    async initialise(){
+        let shadowContainer = document.createElement("div");
+        shadowContainer.id = "shadowCon";
+        this.main.append(shadowContainer);
 
-        /// Appending the tiles in the main div
+        let tilesContainer = document.createElement("div");
+        tilesContainer.id = "tilesCon";
+        this.main.append(tilesContainer);
+
+
         for(var i = 0; i < this.tileCountTotal; i++){
             let tempColumn = document.createElement("div");
             tempColumn.className = "game_column";
             for(var j = 0; j < this.tileCountTotal; j++){
                 tempColumn.append(this.createTile(this.game[i][j]));
             }
-            this.main.append(tempColumn);
+            tilesContainer.append(tempColumn);
+
+            let tempColumnShadow = document.createElement("div");
+            tempColumnShadow.className = "game_column";
+            for(var j = 0; j < this.tileCountTotal; j++){
+                tempColumnShadow.append(this.createTileShadow());
+            }
+            shadowContainer.append(tempColumnShadow);
+        }
+
+
+        for(var i = 0; i < this.tileCountTotal*this.tileCountTotal; i++){
+            this.locations[i] = {
+                x : 0,
+                y : 0,
+            };
+        }
+        this.canMove = true;
+
+    }
+
+    initialise(){
+
+        /// Appending the tiles in the main div
+        let shadowContainer = document.createElement("div");
+        shadowContainer.id = "shadowCon";
+        this.main.append(shadowContainer);
+
+        let tilesContainer = document.createElement("div");
+        tilesContainer.id = "tilesCon";
+        this.main.append(tilesContainer);
+
+
+        for(var i = 0; i < this.tileCountTotal; i++){
+            let tempColumn = document.createElement("div");
+            tempColumn.className = "game_column";
+            for(var j = 0; j < this.tileCountTotal; j++){
+                tempColumn.append(this.createTile(this.game[i][j]));
+            }
+            tilesContainer.append(tempColumn);
+
+            let tempColumnShadow = document.createElement("div");
+            tempColumnShadow.className = "game_column";
+            for(var j = 0; j < this.tileCountTotal; j++){
+                tempColumnShadow.append(this.createTileShadow());
+            }
+            shadowContainer.append(tempColumnShadow);
         }
         
         /// The initial state of the game is determined by moving the tiles from the 
@@ -193,35 +274,83 @@ class gameClass{
             }
 
         }
+
+        this.canMove = true;
     }
 
 
 }
 var game;
 var config = {
-    "margin" : 8,
+    "margin" : 5,
     "size" : 70,
+    "n" : 4,
 };
 window.onload = function(){
     var game_div = document.getElementById("game_main");
+    console.log();
+    if(window.innerWidth < ((config.size + 2*config.margin)*(config.n) + 20)){
+        config.size = Math.floor(((window.innerWidth - 40)/config.n) - 2*config.margin );
+    }
     game = new gameClass(game_div, config);
     game.initialise();
+
+    window.onkeydown = function(event){
+        if(event.keyCode == 37){
+            game.move(2);
+        }
+    
+        if(event.keyCode == 38){
+            game.move(1);
+        }
+    
+        if(event.keyCode == 39){
+            game.move(4);
+        }
+    
+        if(event.keyCode == 40){
+            game.move(3);
+        }
+    };
+    
+    let touchStatus = {};
+    window.addEventListener("touchstart",function(event){
+        touchStatus.start = {};
+        touchStatus.start.x = event.touches[0].screenX;
+        touchStatus.start.y = event.touches[0].screenY;
+    });
+
+
+    window.addEventListener("touchend",function(event){
+        let xDiff = event.changedTouches[0].screenX - touchStatus.start.x;
+        let yDiff = event.changedTouches[0].screenY - touchStatus.start.y;
+
+        if(Math.abs(xDiff) > Math.abs(yDiff)){
+            if(Math.abs(xDiff) > 30){
+                if(xDiff < 0){
+                    game.move(2);
+
+                }else{
+                    game.move(4);
+
+                }
+            }
+        }else{
+            console.log(yDiff);
+            if(Math.abs(yDiff) > 30){
+                if(yDiff < 0){
+                    game.move(1);
+                    
+                }else{
+                    game.move(3);
+
+                }
+            }
+        }
+    });
+    window.addEventListener("touchcancel",function(event){
+        console.log(event.changedTouches);
+    });
+    
 };
 
-window.onkeydown = function(event){
-    if(event.keyCode == 37){
-        game.move(2)
-    }
-
-    if(event.keyCode == 38){
-        game.move(1)
-    }
-
-    if(event.keyCode == 39){
-        game.move(4)
-    }
-
-    if(event.keyCode == 40){
-        game.move(3)
-    }
-};
